@@ -2,7 +2,6 @@
 
 console.log('Gledaj!  First server!');
 
-
 // REQUIRED
 const express = require('express');
 require('dotenv').config();
@@ -69,38 +68,92 @@ app.get('/pet', (request, response, next) => {
 //     }
 // }
 
-///AC new weather code
+///AC NEW WEATHER CODE ////////////////////////////////////////////
 app.get('/weather', getWeather);
 
-async function getWeather(request, response) {
-  const city_name = request.query.city_name;
-  console.log(city_name);
-  const url = `http://api.weatherbit.io/v2.0/forecast/daily?key=${process.env.REACT_APP_WEATHERBIT_API_KEY}&query=${city_name}`;
+async function getWeather(request, response, next) {
+
+  const lat = request.query.lat;
+  const lon = request.query.lon;
+  console.log('lat', lat);
+  console.log('lon', lon);
+  const url = `http://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lon}&key=${process.env.REACT_APP_WEATHERBIT_API_KEY}`;
+  // const url = http://api.weatherbit.io/v2.0/forecast/daily?key=9e38424d9f774ef3995a3244ca4c1a11&lat=38.123&lon=-78.543
+  //let url = `https://us1.locationiq.com/v1/search?key=${process.env.REACT_APP_LOCATIONIQ_API_KEY}&q=${this.state.city}&format=json`;
+  
   try {
-      const weatherResponse = await axios.get(url);
-      console.log(weatherResponse);
-
-      const dataToSend = weatherResponse.data.map(object => {
+    const weatherResponse = await axios.get(url);
+    console.log(weatherResponse);
+    
+    const dataToSend = weatherResponse.data.data.map(object => {
       return new Forecast(object);
-      });
+    });
 
-      response.status(200).send(dataToSend);
+    response.status(200).send(dataToSend);
 
   } catch (error) {
-    console.log('error message is: ', err);
-    response.status(500).send(`server error`);
+    next(error);
+  }
+
+}
+
+class Forecast {
+  constructor(weatherObj) {
+    this.date = weatherObj.valid_date;
+    this.description = weatherObj.weather.description;
+  }
+}
+
+////AC MOVIE CODE BELOW/////////////////////////
+app.get('/movies', getMovies);
+
+async function getMovies(request, response, next) {
+
+  const city = request.query.city;
+  console.log('city', city);
+  const url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.REACT_APP_MOVIEDB_API_KEY}&language=en-US&query=${city}&page=1&include_adult=false`;
+
+  try {
+    const moviesResponse = await axios.get(url);
+    console.log(moviesResponse);
+    
+    const dataToSend = moviesResponse.data.results.map(object => {
+      return new Movies(object);
+    });
+
+    response.status(200).send(dataToSend);
+
+  } catch (error) {
+    next(error);
   }
 
 };
 
+class Movies {
+  constructor(moviesObj) {
+    this.date = moviesObj.title;
+    this.description = moviesObj.overview;
+  }
+}
 
 
+
+
+
+
+
+
+
+
+
+
+/////////////PREVIOUS CODE BELOW
 // ///AC original weather code
 // app.get('/weather', (request, response, next) => {
-//   try {
-//     let city_name = request.query.city_name;
-//     console.log(city_name);
-//     // let dataToSend = data.find(weather => weather.city_name === city_name);
+  //   try {
+    //     let city_name = request.query.city_name;
+    //     console.log(city_name);
+    //     // let dataToSend = data.find(weather => weather.city_name === city_name);
 //     let dataToGroom = data.find(weather => weather.city_name === city_name);
 //     let dataToSend = dataToGroom.data.map(object => {
 //       return new Forecast(object);
@@ -115,16 +168,20 @@ async function getWeather(request, response) {
 
 // app.get('/pet', (request, response, next) => {
 //   try {
-  //     let species = request.query.species;
+//     let species = request.query.species;
 //     // console.log(species);
 //     let dataToGroom = data.find(pet => pet.species === species);
 //     let dataToSend = new Pet(dataToGroom);
 //     response.status(200).send(dataToSend);
 //   } catch (error) {
-  //     // if I have an error, this will create a new instance of the Error Object that lives in Express.
-  //     next(error);
+//     // if I have an error, this will create a new instance of the Error Object that lives in Express.
+//     next(error);
 //   }
 // });
+
+//movies
+// https://api.themoviedb.org/3/search/tv?api_key=079169378594480c9faa05367e9900ab&language=en-US&page=1&query=Pittsburgh&include_adult=false
+//
 
 class Pet {
   constructor(petObj){
@@ -133,22 +190,12 @@ class Pet {
   }
 }
 
-class Forecast {
-	constructor(weatherObj) {
-	 this.date = weatherObj.valid_date;	
-	 this.description = weatherObj.weather.description;
-
- }
-}
-
-
-
-class Weather {
-  constructor(weatherObj){
-    this.lat = weatherObj.lat;
-    this.lon = weatherObj.lon;
-  }
-}
+// class Weather {
+//   constructor(weatherObj){
+//     this.lat = weatherObj.lat;
+//     this.lon = weatherObj.lon;
+//   }
+// }
 
 // // Catch all - needs to be at the bottom
 app.get('*', (request, response) => {
@@ -160,6 +207,5 @@ app.get('*', (request, response) => {
 app.use((error, request, response, next)=> {
   response.status(500).send(error.message);
 });
-  
-  
-  app.listen(PORT, ()=> console.log(`We are up on PORT: ${PORT}`));
+
+app.listen(PORT, ()=> console.log(`We are up on PORT: ${PORT}`));
