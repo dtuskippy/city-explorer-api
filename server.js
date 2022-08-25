@@ -132,7 +132,6 @@ async function getMovies(request, response, next) {
 class Movies {
   constructor(moviesObj) {
     this.date = moviesObj.title;
-    this.description = moviesObj.overview;
   }
 }
 
